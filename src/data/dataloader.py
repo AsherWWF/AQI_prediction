@@ -33,7 +33,7 @@ def geo_transform(station_geo):
 	geo = (geo - np.mean(geo, axis=0)) / (np.std(geo, axis=0) + 1e-8)
 
 	geo = np.concatenate((poi, geo), axis=1)
-	return geo  #[num_station, num_geo_feature]
+	return geo  #[num_station, num_geo_feature (24)]
 
 def get_geo_feature(dataset):
 	station_map, station_loc, station_geo = utils.load_h5(os.path.join(DATA_PATH, 'geo.h5'),
@@ -45,11 +45,11 @@ def get_geo_feature(dataset):
 	geo = geo_transform(station_geo)  #[num_station, num_geo_feature]
 
 	# feature = np.concatenate((loc, city, geo), axis=1)
-	feature = np.concatenate((loc, geo), axis=1)  #[num_station, num_geo_feature]
+	feature = np.concatenate((loc, geo), axis=1)  #[num_station, num_geo_feature (26)]
 	# feature = loc
 
 	graph = utils.build_graph(station_map, station_loc, dataset['n_neighbors'])
-	return feature, graph   #[num_station, num_geo_feature],   #[n, n], list, list
+	return feature, graph   #[num_station, num_geo_feature (26)],   #[n, n], list, list
 
 def dataloader(dataset):
 	data = utils.load_h5(os.path.join(DATA_PATH, 'data_17.h5'), ['data'])
@@ -77,7 +77,9 @@ def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
 	timespan = np.tile(timespan, (1, num_nodes, 1)).T
 	aqi_fill = np.concatenate((aqi_fill, timespan), axis=2)    #[T, N, D]  add time of day 
 
-	geo_feature, _ = get_geo_feature(dataset)  #[num_station, num_geo_feature]
+	geo_feature, _ = get_geo_feature(dataset)  #[num_station, num_geo_feature (26)]
+
+	data_fill = np.concatenate((aqi_fill, np.tile(np.expand_dims(geo_feature, axis=0), (n_timestamp, 1, 1))), axis=2)
 
 	input_len = dataset['input_len']
 	output_len = dataset['output_len']
@@ -95,10 +97,11 @@ def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
 			logging.info('Processing %d timestamps', i)
 			# if i > 0: break
 
-	data = mx.nd.array(np.stack(data)) # [B, T, N, D]
+	data = mx.nd.array(np.stack(data)) # [B, T, N, D(33)]
 	label = mx.nd.array(np.stack(label)) # [B, T, N, D]
 	mask = mx.nd.array(np.expand_dims(np.stack(mask), axis=3)) # [B, T, N, 1]
 	feature = mx.nd.array(np.stack(feature)) # [B, N, D]
+	
 
 	logging.info('shape of feature: %s', feature.shape)
 	logging.info('shape of data: %s', data.shape)
