@@ -49,7 +49,7 @@ def build_graph(station_map, station_loc, city, n_neighbors):
 	n = station_map.shape[0]
 	src, dst = [], []
     
-	# designed for linking stations in each city
+	# code snippet for linking stations in each city
 	# ----------------------------------------------------------
     num_nodes_each_city = np.sum(city, axis=0)  #[num_city]
 	
@@ -67,7 +67,7 @@ def build_graph(station_map, station_loc, city, n_neighbors):
 
 
 
-	# designed for k nearest neighbor
+	# code snippet for linking k nearest neighbor
 	# -------------------------------------------------------------
 	# for i in range(n):
 	# 	src += list(np.argsort(dist[:, i])[:n_neighbors + 1])

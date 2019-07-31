@@ -30,7 +30,7 @@ class Graph(Block):
         self.src = src
         self.dst = dst
         self.hidden_size = hidden_size
-        self.dist = mx.nd.expand_dims(mx.nd.array(dist[src, dst]), axis=1)
+        self.dist = mx.nd.expand_dims(mx.nd.array(dist[src, dst]), axis=1)  #[num_edge, 1]
 
         # create graph
         self.num_nodes = n = dist.shape[0]
