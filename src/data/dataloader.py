@@ -48,7 +48,7 @@ def get_geo_feature(dataset):
 	feature = np.concatenate((loc, geo), axis=1)  #[num_station, num_geo_feature (26)]
 	# feature = loc
 
-	graph = utils.build_graph(station_map, station_loc, dataset['n_neighbors'])
+	graph = utils.build_graph(station_map, station_loc, city, dataset['n_neighbors'])
 	return feature, graph   #[num_station, num_geo_feature (26)],   #[n, n], list, list
 
 def dataloader(dataset):

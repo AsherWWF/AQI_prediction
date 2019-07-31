@@ -43,14 +43,36 @@ def get_distance_matrix(loc):
 	dist = dist * 6378.137 * 10000000 / 10000
 	return dist   #[n, n]
 
-def build_graph(station_map, station_loc, n_neighbors):
+def build_graph(station_map, station_loc, city, n_neighbors):
 	dist = get_distance_matrix(station_loc)
 
 	n = station_map.shape[0]
 	src, dst = [], []
-	for i in range(n):
-		src += list(np.argsort(dist[:, i])[:n_neighbors + 1])
-		dst += [i] * (n_neighbors + 1) 
+    
+	# designed for linking stations in each city
+	# ----------------------------------------------------------
+    num_nodes_each_city = np.sum(city, axis=0)  #[num_city]
+	
+	low = 0
+	high = num_nodes_each_city[0]
+	for city_index in range(num_nodes_each_city.shape[0]):
+		list_local_stations = range(low, high)
+		for i in list_local_stations:
+			src += list_local_stations
+			dst += [i] * len(list_local_stations)
+		if city_index < num_nodes_each_city.shape[0] -1:
+		    low += num_nodes_each_city[city_index]
+			high += num_nodes_each_city[city_index + 1]  
+	# -----------------------------------------------------------
+
+
+
+	# designed for k nearest neighbor
+	# -------------------------------------------------------------
+	# for i in range(n):
+	# 	src += list(np.argsort(dist[:, i])[:n_neighbors + 1])
+	# 	dst += [i] * (n_neighbors + 1) 
+    # -------------------------------------------------------------
 
 	mask = np.zeros((n, n))
 	mask[src, dst] = 1
