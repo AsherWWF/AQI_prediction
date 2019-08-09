@@ -16,7 +16,7 @@ model:
   geo_hiddens: [32,32]
   rnn_type: [MyGRUCell, MyGRUCell]
   rnn_hiddens: [8, 8]
-  graph_type: [AttGraph, None]
+  graph_type: [HighLevelGraph, None]
   
 training:
   batch_size: 16
