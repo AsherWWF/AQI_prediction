@@ -43,7 +43,7 @@ def get_distance_matrix(loc):
 	dist = dist * 6378.137 * 10000000 / 10000
 	return dist   #[n, n]
 
-def build_graph(station_map, station_loc, city, n_neighbors):
+def build_graph_low(station_map, station_loc, city, n_neighbors):
 	dist = get_distance_matrix(station_loc)
 
 	n = station_map.shape[0]
@@ -86,6 +86,52 @@ def build_graph(station_map, station_loc, city, n_neighbors):
 	dist = np.exp(-(dist - dist_mean) / dist_std)
 
 	return dist, src, dst  #[n, n], list, list
+
+def build_graph_agg(station_loc, n_neighbors):
+	dist = get_distance_matrix(station_loc)
+
+	n = station_loc.shape[0]
+	src, dst = [], []
+
+	
+
+	# code snippet for linking k nearest neighbor
+	# -------------------------------------------------------------
+	for i in range(n):
+		src += list(np.argsort(dist[:, i])[:n_neighbors + 1])
+		dst += [i] * (n_neighbors + 1) 
+    # -------------------------------------------------------------
+
+	mask = np.zeros((n, n))
+	mask[src, dst] = 1
+	dist[mask == 0] = np.inf
+
+	values = dist.flatten()
+	values = values[values != np.inf]
+
+	dist_mean = np.mean(values)
+	dist_std = np.std(values)
+	dist = np.exp(-(dist - dist_mean) / dist_std)
+
+	return dist, src, dst  #[n, n], list, list
+
+def build_graph_pool(city):
+	src, dst = [], []
+
+	for index in range(city.shape[0]):
+		src.append(index)
+		dst.append(np.asscalar(np.where(city[index] == 1)[0]) + city.shape[0])
+
+	return  src, dst  #[n, n], list, list
+
+def build_graph_update(city):
+	src, dst = [], []
+
+	for index in range(city.shape[0]):
+		dst.append(index)
+		src.append(np.asscalar(np.where(city[index] == 1)[0]) + city.shape[0])
+
+	return  src, dst  #[n, n], list, list
 
 def fill_missing(data):
 	T, N, D = data.shape

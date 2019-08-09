@@ -47,8 +47,20 @@ def get_geo_feature(dataset):
 	# feature = np.concatenate((loc, city, geo), axis=1)
 	feature = np.concatenate((loc, geo), axis=1)  #[num_station, num_geo_feature (26)]
 	# feature = loc
+ 
+    # calculate loc of each city
+    num_city = city.shape[1]
+	city_loc = np.zeros([num_city, 2])
+	for i in range(num_city):
+		start = np.where(city[:,i]==1)[0][0]
+		end = np.where(city[:,i]==1)[0][-1] + 1
+		city_loc[i] = np.mean(station_loc[start:end,:], axis=0)
 
-	graph = utils.build_graph(station_map, station_loc, city, dataset['n_neighbors'])
+    graph = {}
+	graph['pool'] = utils.build_graph_pool(city)
+	graph['update'] = utils.build_graph_update(city)
+	graph['low'] = utils.build_graph_low(station_map, station_loc, city, dataset['n_neighbors'])
+	graph['agg'] = utils.build_graph_agg(city_loc, dataset['n_neighbors'])
 	return feature, graph   #[num_station, num_geo_feature (26)],   #[n, n], list, list
 
 def dataloader(dataset):
