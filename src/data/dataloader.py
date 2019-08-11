@@ -38,6 +38,7 @@ def geo_transform(station_geo):
 def get_geo_feature(dataset):
 	station_map, station_loc, station_geo = utils.load_h5(os.path.join(DATA_PATH, 'geo.h5'),
 													['station_map', 'station', 'geo_feature'])
+	
 
 	station_geo[np.isnan(station_geo)] = 0
 	loc = (station_loc - np.mean(station_loc, axis=0)) / np.std(station_loc, axis=0)  #[num_station, 2]
@@ -49,14 +50,14 @@ def get_geo_feature(dataset):
 	# feature = loc
  
     # calculate loc of each city
-    num_city = city.shape[1]
+	num_city = city.shape[1]
 	city_loc = np.zeros([num_city, 2])
 	for i in range(num_city):
 		start = np.where(city[:,i]==1)[0][0]
 		end = np.where(city[:,i]==1)[0][-1] + 1
 		city_loc[i] = np.mean(station_loc[start:end,:], axis=0)
 
-    graph = {}
+	graph = {}
 	graph['pool'] = utils.build_graph_pool(city)
 	graph['update'] = utils.build_graph_update(city)
 	graph['low'] = utils.build_graph_low(station_map, station_loc, city, dataset['n_neighbors'])
@@ -65,7 +66,7 @@ def get_geo_feature(dataset):
 
 def dataloader(dataset):
 	data = utils.load_h5(os.path.join(DATA_PATH, 'data_17.h5'), ['data'])
-	data = data[-90 * 24:]
+
 	data[data > 500] = np.nan
 
 	n_timestamp = data.shape[0]
@@ -76,7 +77,7 @@ def dataloader(dataset):
 	return data[:num_train], data[num_train: num_train + num_eval], data[-num_test:]
 
 
-def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
+def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True, offset=0):
 	dataset = setting['dataset']
 	training = setting['training']
 
@@ -85,9 +86,19 @@ def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
 
 	n_timestamp, num_nodes, _ = aqi_fill.shape
 
-	timespan = (np.arange(n_timestamp) % 24) / 24
+	timestamp = np.arange(n_timestamp) + offset
+
+	timespan = (timestamp % 24) / 24
 	timespan = np.tile(timespan, (1, num_nodes, 1)).T
 	aqi_fill = np.concatenate((aqi_fill, timespan), axis=2)    #[T, N, D]  add time of day 
+
+	timespan = ((timestamp // 24) % 7) / 7
+	timespan = np.tile(timespan, (1, num_nodes, 1)).T
+	aqi_fill = np.concatenate((aqi_fill, timespan), axis=2)    #[T, N, D]  add day of week
+
+	timespan = ((timestamp // (24 * 31)) % 12) / 12
+	timespan = np.tile(timespan, (1, num_nodes, 1)).T
+	aqi_fill = np.concatenate((aqi_fill, timespan), axis=2)    #[T, N, D]  add month of year  
 
 	geo_feature, _ = get_geo_feature(dataset)  #[num_station, num_geo_feature (26)]
 
@@ -97,11 +108,11 @@ def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
 	output_len = dataset['output_len']
 	feature, data, mask, label  = [], [], [], []
 	for i in range(n_timestamp - input_len - output_len + 1):
-		data.append(aqi_fill[i: i + input_len])
+		data.append(data_fill[i: i + input_len])
 
 		mask.append(1.0 - np.isnan(aqi[i + input_len: i + input_len + output_len,:,0]).astype(float))
 
-		label.append(aqi_fill[i + input_len: i + input_len + output_len])
+		label.append(data_fill[i + input_len: i + input_len + output_len])
 		
 		feature.append(geo_feature)
 
@@ -109,7 +120,7 @@ def dataiter_all_sensors_seq2seq(aqi, scaler, setting, shuffle=True):
 			logging.info('Processing %d timestamps', i)
 			# if i > 0: break
 
-	data = mx.nd.array(np.stack(data)) # [B, T, N, D(33)]
+	data = mx.nd.array(np.stack(data)) # [B, T, N, D(35)]
 	label = mx.nd.array(np.stack(label)) # [B, T, N, D]
 	mask = mx.nd.array(np.expand_dims(np.stack(mask), axis=3)) # [B, T, N, 1]
 	feature = mx.nd.array(np.stack(feature)) # [B, N, D]
@@ -134,6 +145,8 @@ def dataloader_all_sensors_seq2seq(setting):
 	scaler = utils.Scaler(train)
 
 	return dataiter_all_sensors_seq2seq(train, scaler, setting), \
-		   dataiter_all_sensors_seq2seq(eval, scaler, setting, shuffle=False), \
-		   dataiter_all_sensors_seq2seq(test, scaler, setting, shuffle=False), \
+		   dataiter_all_sensors_seq2seq(eval, scaler, setting, shuffle=False, offset=train.shape[0]), \
+		   dataiter_all_sensors_seq2seq(test, scaler, setting, shuffle=False, offset=train.shape[0]+eval.shape[0]), \
 		   scaler
+
+

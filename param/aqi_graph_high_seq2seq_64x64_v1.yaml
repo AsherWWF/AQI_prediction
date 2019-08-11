@@ -1,0 +1,12 @@
+best: 0
+best_result: &id001
+  epoch: 1
+  mae: 11.503226280212402
+  mae-index: 8.90706729888916
+  rmse: 20.332706451416016
+  rmse-index: 15.992305755615234
+early_stop_epoch: 50
+early_stop_metric: rmse
+eval:
+- *id001
+name: ../param/aqi_graph_high_seq2seq_64x64_v1

@@ -10,12 +10,12 @@ dataset:
   dataloader: dataloader_all_sensors_seq2seq
 
 model:
-  name: aqi_graph_high_seq2seq_16x16_v1
+  name: aqi_graph_high_seq2seq_8x8_v1
   type: seq2seq
 
   geo_hiddens: [32,32]
   rnn_type: [MyGRUCell, MyGRUCell]
-  rnn_hiddens: [16, 16]
+  rnn_hiddens: [8, 8]
   graph_type: [HighLevelGraph, None]
   
 training:
@@ -32,4 +32,4 @@ training:
   cl_decay_steps: 2000
 
   early_stop_metric: rmse
-  early_stop_epoch: 60
+  early_stop_epoch: 40

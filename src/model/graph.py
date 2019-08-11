@@ -164,7 +164,7 @@ class HyperAttGraph(Graph):
 
 class PoolingGraph(Block):
     def __init__(self, src, dst, prefix=None):
-        super(Graph, self).__init__(prefix=prefix)
+        super(PoolingGraph, self).__init__(prefix=prefix)
         self.src = src
         self.dst = dst
 
@@ -193,7 +193,7 @@ class PoolingGraph(Block):
         g.nodes[self.src].data['state'] = state        
         g.update_all(self.msg_edge, self.msg_reduce)
         state = g.ndata.pop('new_state')
-        return state[len(src): ]
+        return state[len(self.src): ]
     
     def msg_edge(self, edge):
         return {'state': edge.src['state'] }
@@ -205,7 +205,7 @@ class PoolingGraph(Block):
 
 class updateGraph(Block):
     def __init__(self, src, dst, prefix=None):
-        super(Graph, self).__init__(prefix=prefix)
+        super(updateGraph, self).__init__(prefix=prefix)
         self.src = src
         self.dst = dst
 
@@ -234,7 +234,7 @@ class updateGraph(Block):
         g.nodes[list(set(self.src))].data['state'] = state       
         g.update_all(self.msg_edge, self.msg_reduce)
         state = g.ndata.pop('new_state')
-        return state[: len(dst)]
+        return state[: len(self.dst)]
     
     def msg_edge(self, edge):
         return {'state': edge.src['state'] }

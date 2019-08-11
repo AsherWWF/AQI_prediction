@@ -19,7 +19,7 @@ model:
   graph_type: [HighLevelGraph, None]
   
 training:
-  batch_size: 16
+  batch_size: 4
   
   wd: 0
   lr: 0.01
